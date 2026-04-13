@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flow Retrospective — Ploomes</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Lora:ital,wght@1,600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --purple: #7443F6;
+    --dark: #1E0C45;
+    --mid: #610FC7;
+    --light: #EBE5FF;
+    --faint: #F5F2FF;
+    --purple-light: #AB82FF;
+    --purple-lighter: #C7B0FF;
+    --white: #FFFFFF;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Manrope', sans-serif;
+    background: var(--faint);
+    color: var(--dark);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── HEADER ─────────────────────────────────────── */
+  .hero {
+    background: var(--dark);
+    padding: 56px 48px 48px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    right: -60px; top: -80px;
+    width: 420px; height: 420px;
+    background: radial-gradient(circle, rgba(116,67,246,0.35) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(116,67,246,0.2);
+    border: 1px solid rgba(171,130,255,0.4);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--purple-light);
+    margin-bottom: 20px;
+  }
+
+  .hero-badge .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--purple);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .hero h1 {
+    font-family: 'Manrope', sans-serif;
+    font-size: clamp(28px, 4vw, 42px);
+    font-weight: 800;
+    color: var(--white);
+    line-height: 1.15;
+    margin-bottom: 10px;
+  }
+
+  .hero h1 em {
+    font-family: 'Lora', serif;
+    font-style: italic;
+    font-weight: 600;
+    color: var(--purple-light);
+    font-size: 1.05em;
+  }
+
+  .hero-sub {
+    font-size: 14px;
+    color: var(--purple-lighter);
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+
+  .meta-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .chip {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--purple-lighter);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .chip svg { width: 13px; height: 13px; opacity: 0.8; }
+
+  /* ── OVERVIEW TABLE ──────────────────────────────── */
+  .section { padding: 40px 48px; }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--purple);
+    margin-bottom: 16px;
+  }
+
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    margin-bottom: 48px;
+  }
+
+  @media (max-width: 900px) {
+    .overview-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .overview-grid { grid-template-columns: repeat(2, 1fr); }
+    .section { padding: 32px 24px; }
+    .hero { padding: 40px 24px 36px; }
+  }
+
+  .ov-card {
+    background: var(--white);
+    border: 1px solid #DDD8F0;
+    border-radius: 12px;
+    padding: 16px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: block;
+  }
+
+  .ov-card:hover {
+    border-color: var(--purple);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(116,67,246,0.12);
+  }
+
+  .ov-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--dark);
+    color: var(--white);
+    font-size: 12px;
+    font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 10px;
+  }
+
+  .ov-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--dark);
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+
+  .ov-time {
+    font-size: 11px;
+    color: var(--purple);
+    font-weight: 600;
+  }
+
+  /* ── PHASES ──────────────────────────────────────── */
+  .phases { display: flex; flex-direction: column; gap: 24px; }
+
+  .phase {
+    background: var(--white);
+    border: 1px solid #DDD8F0;
+    border-radius: 16px;
+    overflow: hidden;
+    scroll-margin-top: 24px;
+  }
+
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 24px 28px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+
+  .phase-header:hover { background: var(--faint); }
+
+  .phase-num-badge {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .phase-info { flex: 1; }
+
+  .phase-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--dark);
+    line-height: 1.3;
+  }
+
+  .phase-meta {
+    font-size: 12px;
+    color: #888;
+    margin-top: 2px;
+    display: flex;
+    gap: 12px;
+  }
+
+  .phase-meta span { display: flex; align-items: center; gap: 4px; }
+
+  .phase-time-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .chevron {
+    width: 20px; height: 20px;
+    color: #AAA;
+    transition: transform 0.25s;
+    flex-shrink: 0;
+  }
+
+  .phase.open .chevron { transform: rotate(90deg); }
+
+  .phase-body {
+    display: none;
+    padding: 0 28px 28px 86px;
+    border-top: 1px solid var(--light);
+  }
+
+  .phase.open .phase-body { display: block; padding-top: 22px; }
+
+  .phase-body ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .phase-body ul li {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #2a1a5e;
+    padding-left: 18px;
+    position: relative;
+  }
+
+  .phase-body ul li::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--purple);
+    border-radius: 50%;
+    position: absolute;
+    left: 0; top: 8px;
+  }
+
+  .tip-box {
+    background: var(--faint);
+    border-left: 3px solid var(--purple);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #3a2070;
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  .tip-box strong { font-style: normal; color: var(--purple); }
+
+  /* ── QUESTIONS ───────────────────────────────────── */
+  .questions-section {
+    background: var(--dark);
+    border-radius: 16px;
+    padding: 32px;
+    margin-top: 48px;
+    color: var(--white);
+  }
+
+  .questions-section .section-label { color: var(--purple-light); }
+
+  .q-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--white);
+    margin-bottom: 24px;
+    line-height: 1.3;
+  }
+
+  .q-title em {
+    font-family: 'Lora', serif;
+    font-style: italic;
+    color: var(--purple-light);
+  }
+
+  .q-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  @media (max-width: 700px) { .q-grid { grid-template-columns: 1fr; } }
+
+  .q-card {
+    background: rgba(116,67,246,0.12);
+    border: 1px solid rgba(171,130,255,0.2);
+    border-radius: 12px;
+    padding: 18px;
+  }
+
+  .q-card-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--purple-light);
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(171,130,255,0.2);
+  }
+
+  .q-card ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+
+  .q-card ul li {
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--purple-lighter);
+    padding-left: 14px;
+    position: relative;
+  }
+
+  .q-card ul li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--purple);
+    font-size: 11px;
+    top: 1px;
+  }
+
+  /* ── ACTION TEMPLATE ─────────────────────────────── */
+  .action-section {
+    margin-top: 24px;
+    background: var(--white);
+    border: 1px solid #DDD8F0;
+    border-radius: 16px;
+    padding: 28px;
+  }
+
+  .action-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--dark);
+    margin-bottom: 6px;
+  }
+
+  .action-sub {
+    font-size: 13px;
+    color: #777;
+    margin-bottom: 22px;
+    line-height: 1.5;
+  }
+
+  .action-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  @media (max-width: 700px) { .action-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 400px) { .action-grid { grid-template-columns: 1fr; } }
+
+  .action-field {
+    background: var(--faint);
+    border: 1.5px dashed #C7B0FF;
+    border-radius: 10px;
+    padding: 14px;
+  }
+
+  .action-field-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--purple);
+    margin-bottom: 6px;
+  }
+
+  .action-field-hint {
+    font-size: 12px;
+    color: #9988BB;
+    line-height: 1.5;
+  }
+
+  /* ── SEQUENCE ────────────────────────────────────── */
+  .sequence-section {
+    margin-top: 24px;
+    background: var(--white);
+    border: 1px solid #DDD8F0;
+    border-radius: 16px;
+    padding: 28px;
+  }
+
+  .seq-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+
+  .seq-item {
+    flex: 1;
+    text-align: center;
+    padding: 16px 8px;
+    position: relative;
+  }
+
+  .seq-month {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--purple-light);
+    margin-bottom: 8px;
+  }
+
+  .seq-pill {
+    display: inline-block;
+    background: var(--dark);
+    color: var(--white);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .seq-desc {
+    font-size: 11px;
+    color: #888;
+    line-height: 1.4;
+  }
+
+  .seq-arrow {
+    font-size: 20px;
+    color: var(--purple-lighter);
+    flex-shrink: 0;
+    padding: 0 4px;
+  }
+
+  /* ── FOOTER ──────────────────────────────────────── */
+  .footer {
+    background: var(--dark);
+    padding: 24px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .footer-brand {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--purple-light);
+  }
+
+  .footer-info {
+    font-size: 12px;
+    color: rgba(171,130,255,0.6);
+  }
+
+  /* ── ANIMATIONS ──────────────────────────────────── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero > * { animation: fadeUp 0.5s ease both; }
+  .hero > *:nth-child(1) { animation-delay: 0.05s; }
+  .hero > *:nth-child(2) { animation-delay: 0.12s; }
+  .hero > *:nth-child(3) { animation-delay: 0.18s; }
+  .hero > *:nth-child(4) { animation-delay: 0.24s; }
+  .hero > *:nth-child(5) { animation-delay: 0.30s; }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge"><span class="dot"></span>Kanban · Ploomes Agilidade</div>
+  <h1>Flow <em>Retrospective</em></h1>
+  <p class="hero-sub">Baseada nos dados do Kanban — não na memória subjetiva do time.<br>Clique em cada fase para expandir o roteiro completo.</p>
+  <div class="meta-chips">
+    <div class="chip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      75–90 min
+    </div>
+    <div class="chip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Frequência mensal
+    </div>
+    <div class="chip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Dashboard de métricas como base
+    </div>
+    <div class="chip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Time IA · ERP · INFRA
+    </div>
+  </div>
+</div>
+
+<!-- OVERVIEW -->
+<div class="section">
+  <div class="section-label">Visão geral das fases</div>
+  <div class="overview-grid">
+    <a class="ov-card" href="#phase1" onclick="openPhase('phase1')">
+      <div class="ov-num">1</div>
+      <div class="ov-title">Preparação</div>
+      <div class="ov-time">Antes da retro</div>
+    </a>
+    <a class="ov-card" href="#phase2" onclick="openPhase('phase2')">
+      <div class="ov-num">2</div>
+      <div class="ov-title">Abertura</div>
+      <div class="ov-time">10 min</div>
+    </a>
+    <a class="ov-card" href="#phase3" onclick="openPhase('phase3')">
+      <div class="ov-num">3</div>
+      <div class="ov-title">Análise de fluxo</div>
+      <div class="ov-time">30–35 min</div>
+    </a>
+    <a class="ov-card" href="#phase4" onclick="openPhase('phase4')">
+      <div class="ov-num">4</div>
+      <div class="ov-title">Padrões</div>
+      <div class="ov-time">10 min</div>
+    </a>
+    <a class="ov-card" href="#phase5" onclick="openPhase('phase5')">
+      <div class="ov-num">5</div>
+      <div class="ov-title">Ações</div>
+      <div class="ov-time">10–15 min</div>
+    </a>
+    <a class="ov-card" href="#phase6" onclick="openPhase('phase6')">
+      <div class="ov-num">6</div>
+      <div class="ov-title">Fechamento</div>
+      <div class="ov-time">5 min</div>
+    </a>
+  </div>
+
+  <!-- PHASES -->
+  <div class="phases">
+
+    <!-- FASE 1 -->
+    <div class="phase" id="phase1">
+      <div class="phase-header" onclick="toggle('phase1')">
+        <div class="phase-num-badge" style="background:#1E0C45;color:#fff;">1</div>
+        <div class="phase-info">
+          <div class="phase-title">Preparação</div>
+          <div class="phase-meta">
+            <span>Antes da retro</span>
+            <span>· Responsabilidade do agilista</span>
+          </div>
+        </div>
+        <div class="phase-time-badge" style="background:#EBE5FF;color:#7443F6;">Antes</div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="phase-body">
+        <ul>
+          <li>Filtre o dashboard de métricas pelo período do ciclo (último mês ou entre as retros)</li>
+          <li>Selecione 2 ou 3 dados que mais chamam atenção: lead time alto, throughput baixo, bug recorrente, história que não terminou</li>
+          <li>Monte o quadro no FigJam com os dados já visíveis — não mostre tudo, escolha o que vai provocar conversa</li>
+          <li>Prepare perguntas-guia para cada dado selecionado (ver seção abaixo)</li>
+        </ul>
+        <div class="tip-box"><strong>Dica:</strong> Curadoria é facilitação. Jogar todos os dados de uma vez paralisa o time — escolha o que quer que o time veja primeiro.</div>
+      </div>
+    </div>
+
+    <!-- FASE 2 -->
+    <div class="phase" id="phase2">
+      <div class="phase-header" onclick="toggle('phase2')">
+        <div class="phase-num-badge" style="background:#7443F6;color:#fff;">2</div>
+        <div class="phase-info">
+          <div class="phase-title">Abertura — o fluxo em números</div>
+          <div class="phase-meta"><span>10 min</span><span>· Apresente os dados, não os problemas</span></div>
+        </div>
+        <div class="phase-time-badge" style="background:#EBE5FF;color:#7443F6;">10 min</div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="phase-body">
+        <ul>
+          <li>Compartilhe a tela com o dashboard aberto — sem texto explicativo ainda</li>
+          <li>Dê 2 minutos de silêncio para o time observar os dados</li>
+          <li>Pergunte: <em>"O que vocês veem aqui?"</em> — deixe alguém do time nomear o problema antes de você</li>
+          <li>Anote as percepções no quadro em tempo real</li>
+        </ul>
+        <div class="tip-box"><strong>Dica:</strong> Não inicie com <em>"o lead time está alto"</em>. Deixe o dado falar. Quando o time nomeia o problema, o engajamento é diferente.</div>
+      </div>
+    </div>
+
+    <!-- FASE 3 -->
+    <div class="phase" id="phase3">
+      <div class="phase-header" onclick="toggle('phase3')">
+        <div class="phase-num-badge" style="background:#1E0C45;color:#fff;">3</div>
+        <div class="phase-info">
+          <div class="phase-title">Análise de fluxo — onde o trabalho travou</div>
+          <div class="phase-meta"><span>30–35 min</span><span>· Maior bloco da retro</span></div>
+        </div>
+        <div class="phase-time-badge" style="background:#1E0C45;color:#AB82FF;">30–35 min</div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="phase-body">
+        <ul>
+          <li>Escolha 1 ou 2 métricas do dashboard para aprofundar (lead time, throughput ou cycle time)</li>
+          <li>Para cada uma, faça o time mapear no quadro: <strong>em qual etapa do Kanban o item ficou mais tempo?</strong></li>
+          <li>Use sticky notes: cada bloqueio identificado vira um post-it</li>
+          <li>Agrupe os bloqueios por etapa do board: Dev → Validação → Review → Deploy</li>
+        </ul>
+        <div class="tip-box"><strong>Dica:</strong> Se surgir uma história específica que exemplifica o padrão, faça o time reconstruir a linha do tempo dela. Concretude gera aprendizado.</div>
+      </div>
+    </div>
+
+    <!-- FASE 4 -->
+    <div class="phase" id="phase4">
+      <div class="phase-header" onclick="toggle('phase4')">
+        <div class="phase-num-badge" style="background:#610FC7;color:#fff;">4</div>
+        <div class="phase-info">
+          <div class="phase-title">Padrões — o que se repete</div>
+          <div class="phase-meta"><span>10 min</span><span>· Síntese coletiva antes das ações</span></div>
+        </div>
+        <div class="phase-time-badge" style="background:#EBE5FF;color:#7443F6;">10 min</div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="phase-body">
+        <ul>
+          <li>Olhe para os bloqueios agrupados na fase anterior</li>
+          <li>Pergunte: <em>"O que desses bloqueios já apareceu em retros anteriores?"</em></li>
+          <li>Destaque visualmente os padrões que se repetem (cor diferente no FigJam)</li>
+          <li>Nomeie o padrão com o time — facilita referência futura (<em>"esse é o problema do escopo crescente"</em>)</li>
+        </ul>
+        <div class="tip-box"><strong>Dica:</strong> Padrões que se repetem mas nunca viram ação são o sinal mais importante da retro. Trate com prioridade.</div>
+      </div>
+    </div>
+
+    <!-- FASE 5 -->
+    <div class="phase" id="phase5">
+      <div class="phase-header" onclick="toggle('phase5')">
+        <div class="phase-num-badge" style="background:#7443F6;color:#fff;">5</div>
+        <div class="phase-info">
+          <div class="phase-title">Ações — máximo 2</div>
+          <div class="phase-meta"><span>10–15 min</span><span>· Menos ações, mais execução</span></div>
+        </div>
+        <div class="phase-time-badge" style="background:#EBE5FF;color:#7443F6;">10–15 min</div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="phase-body">
+        <ul>
+          <li>Limite em 2 ações — prioridade sobre quantidade</li>
+          <li>Cada ação precisa de: <strong>o que faremos</strong>, <strong>quem é responsável</strong>, <strong>até quando</strong>, <strong>como saberemos que funcionou</strong></li>
+          <li>Registre no Jira ou Notion como tarefa real — não como nota de retro que ninguém revê</li>
+          <li>Defina qual métrica do dashboard vai monitorar o efeito no próximo ciclo</li>
+        </ul>
+        <div class="tip-box"><strong>Dica:</strong> A pergunta mais importante: <em>"Como saberemos, na próxima retro, se essa ação fez diferença?"</em> Se não tiver resposta, a ação ainda não está pronta.</div>
+      </div>
+    </div>
+
+    <!-- FASE 6 -->
+    <div class="phase" id="phase6">
+      <div class="phase-header" onclick="toggle('phase6')">
+        <div class="phase-num-badge" style="background:#1E0C45;color:#fff;">6</div>
+        <div class="phase-info">
+          <div class="phase-title">Fechamento — saúde do time</div>
+          <div class="phase-meta"><span>5 min</span><span>· Opcional, mas recomendado</span></div>
+        </div>
+        <div class="phase-time-badge" style="background:#EBE5FF;color:#7443F6;">5 min</div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="phase-body">
+        <ul>
+          <li>Cada pessoa responde em uma palavra: <em>"Como você sai dessa retro?"</em></li>
+          <li>Registre as palavras no quadro — viram dado longitudinal</li>
+          <li>Palavras pesadas (cansado, frustrado, sobrecarregado) são dados tão importantes quanto o lead time</li>
+        </ul>
+        <div class="tip-box"><strong>Dica:</strong> Se as palavras forem pesadas, isso merece atenção antes da próxima retro — não depois.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PERGUNTAS-GUIA -->
+  <div class="questions-section">
+    <div class="section-label">Perguntas-guia</div>
+    <div class="q-title">Fase 3 — <em>Análise de Fluxo</em></div>
+    <div class="q-grid">
+      <div class="q-card">
+        <div class="q-card-label">Lead time alto</div>
+        <ul>
+          <li>Em qual etapa o item ficou parado mais tempo — e por quê?</li>
+          <li>Quando percebemos o atraso? Só no final?</li>
+          <li>O que sabíamos no início que teria mudado o tamanho da história?</li>
+          <li>O item tinha dependências externas não mapeadas?</li>
+        </ul>
+      </div>
+      <div class="q-card">
+        <div class="q-card-label">Bugs nas entregas</div>
+        <ul>
+          <li>Esse bug veio de história que ficou muitos dias em validação?</li>
+          <li>Havia critério de aceite claro quando entrou no board?</li>
+          <li>Em qual etapa o risco poderia ter sido sinalizado antes?</li>
+          <li>É um bug de comportamento esperado ou de integração?</li>
+        </ul>
+      </div>
+      <div class="q-card">
+        <div class="q-card-label">Histórias grandes</div>
+        <ul>
+          <li>Essa história poderia ter sido quebrada — onde está a divisão natural?</li>
+          <li>Qual parte gerou mais discussão durante o desenvolvimento?</li>
+          <li>Se dividíssemos em 3, qual entregaria valor primeiro?</li>
+          <li>A história cresceu durante o dev ou já era grande no início?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEMPLATE DE AÇÃO -->
+  <div class="action-section">
+    <div class="action-title">Template de Ação</div>
+    <div class="action-sub">Copie para o Jira ou Notion. Máximo 2 ações por retro.<br>Sem dono e sem métrica de acompanhamento, a ação não existe.</div>
+    <div class="action-grid">
+      <div class="action-field">
+        <div class="action-field-label">O que faremos</div>
+        <div class="action-field-hint">Mudança de processo ou comportamento específica</div>
+      </div>
+      <div class="action-field">
+        <div class="action-field-label">Responsável</div>
+        <div class="action-field-hint">Nome de quem lidera a execução</div>
+      </div>
+      <div class="action-field">
+        <div class="action-field-label">Prazo</div>
+        <div class="action-field-hint">Data ou marco específico</div>
+      </div>
+      <div class="action-field">
+        <div class="action-field-label">Como mediremos</div>
+        <div class="action-field-hint">Métrica do dashboard que vai mudar</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEQUÊNCIA SUGERIDA -->
+  <div class="sequence-section">
+    <div class="section-label">Sequência recomendada de formatos</div>
+    <div class="seq-row">
+      <div class="seq-item">
+        <div class="seq-month">Mês 1</div>
+        <div class="seq-pill">Flow Retro</div>
+        <div class="seq-desc">Calibra o time com dados</div>
+      </div>
+      <div class="seq-arrow">→</div>
+      <div class="seq-item">
+        <div class="seq-month">Mês 2</div>
+        <div class="seq-pill">Sailboat Adaptado</div>
+        <div class="seq-desc">Gera hipóteses de melhoria</div>
+      </div>
+      <div class="seq-arrow">→</div>
+      <div class="seq-item">
+        <div class="seq-month">Mês 3</div>
+        <div class="seq-pill">Itens Críticos</div>
+        <div class="seq-desc">Aprofunda em casos reais</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-brand">Ploomes · Agilidade</div>
+  <div class="footer-info">Flow Retrospective — Times IA · ERP · INFRA</div>
+</div>
+
+<script>
+  function toggle(id) {
+    var el = document.getElementById(id);
+    el.classList.toggle('open');
+  }
+
+  function openPhase(id) {
+    var el = document.getElementById(id);
+    if (!el.classList.contains('open')) {
+      el.classList.add('open');
+    }
+    setTimeout(function() {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  }
+</script>
+</body>
+</html>
